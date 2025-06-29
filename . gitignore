@@ -1,0 +1,5 @@
+*. db
+* sqlite
+-_pycache_/
+. env venv/
+•DS_Store
