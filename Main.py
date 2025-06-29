@@ -13,10 +13,10 @@ import logging
 # Import your backend (assuming it’s in a file called price_matching_backend.py)
 
 from price_matching_backend import (
-PriceMatchingService,
-CraigslistListing,
-PriceAnalysis,
-DatabaseManager
+    PriceMatchingService, 
+    CraigslistListing, 
+    PriceAnalysis, 
+    DatabaseManager
 )
 
 # Configure logging
