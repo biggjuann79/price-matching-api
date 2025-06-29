@@ -72,7 +72,7 @@ self.location = location
 self.url = url
 self.posted_date = posted_date
 self.category = category
-self.subcategory = “”
+self.subcategory = ""
 self.brand = “”
 self.condition = “”
 self.color = “”
@@ -560,13 +560,13 @@ except Exception as e:
 
 async def run_analysis_task(cities, categories):
 try:
-logger.info(f”Starting analysis for cities: {cities}, categories: {categories}”)
+logger.info(f"Starting analysis for cities: {cities}, categories: {categories}")
 analyses = await service.run_analysis(cities, categories)
-logger.info(f”Analysis completed: {len(analyses)} listings processed”)
+logger.info(f"Analysis completed: {len(analyses)} listings processed")
 except Exception as e:
-logger.error(f”Analysis task failed: {str(e)}”)
+logger.error(f"Analysis task failed: {str(e)}")
 
-if **name** == “**main**”:
+if **name** == "**main**":
 import uvicorn
-port = int(os.getenv(“PORT”, 8000)
-uvicorn.run(app, host=“0.0.0.0”, port=port)
+port = int(os.getenv("PORT", 8000)
+uvicorn.run(app, host="0.0.0.0", port=port)
