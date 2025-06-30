@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3
 import os
-from datetime import datetime
 
 # -----------------------------------
 # Initialize FastAPI
@@ -37,11 +36,6 @@ class CraigslistListing(BaseModel):
     url: str
     category: str
     deal_score: float = 0.0
-    ebay_average_price: float = 1200.0
-    savings_amount: float = 401.0
-    savings_percentage: float = 33.0
-    image_urls: list[str] = ["https://picsum.photos/300/200?random=5"]
-    created_at: str = datetime.utcnow().isoformat()
 
 # -----------------------------------
 # SQLite Database Handler
@@ -59,10 +53,7 @@ class DatabaseManager:
                     title TEXT,
                     price REAL,
                     category TEXT,
-                    deal_score REAL,
-                    location TEXT,
-                    url TEXT,
-                    created_at TEXT
+                    deal_score REAL
                 )
             """)
 
@@ -70,21 +61,29 @@ class DatabaseManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO listings 
-                (id, title, price, category, deal_score, location, url, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                listing.id, listing.title, listing.price, listing.category,
-                listing.deal_score, listing.location, listing.url, listing.created_at
-            ))
+                (id, title, price, category, deal_score)
+                VALUES (?, ?, ?, ?, ?)
+            """, (listing.id, listing.title, listing.price, listing.category, listing.deal_score))
 
     def get_listings(self, limit=50):
         with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("SELECT * FROM listings ORDER BY deal_score DESC LIMIT ?", (limit,))
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "id": row[0],
+                    "title": row[1],
+                    "price": row[2],
+                    "category": row[3],
+                    "deal_score": row[4]
+                })
+            return results
+
+    def get_deals(self, min_score=70.0, limit=20):
+        with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
-                SELECT id, title, price, category, deal_score, location, url, created_at 
-                FROM listings 
-                ORDER BY deal_score DESC 
-                LIMIT ?
-            """, (limit,))
+                SELECT * FROM listings WHERE deal_score >= ? ORDER BY deal_score DESC LIMIT ?
+            """, (min_score, limit))
             results = []
             for row in cursor.fetchall():
                 results.append({
@@ -93,13 +92,13 @@ class DatabaseManager:
                     "price": row[2],
                     "category": row[3],
                     "deal_score": row[4],
-                    "location": row[5],
-                    "url": row[6],
-                    "created_at": row[7],
+                    "location": "Dallas, TX",
+                    "url": "https://example.com",
+                    "created_at": "2025-06-29T22:00:00Z",
                     "ebay_average_price": 1200.0,
                     "savings_amount": 401.0,
                     "savings_percentage": 33.0,
-                    "image_urls": ["https://picsum.photos/300/200?random=5"]
+                    "image_urls": ["https://picsum.photos/300/200?random=6"]
                 })
             return results
 
@@ -123,6 +122,14 @@ def health():
 def get_listings(limit: int = 50):
     try:
         data = db.get_listings(limit)
+        return {"success": True, "data": data, "count": len(data)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/deals")
+def get_deals(min_score: float = 70.0, limit: int = 20):
+    try:
+        data = db.get_deals(min_score, limit)
         return {"success": True, "data": data, "count": len(data)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
