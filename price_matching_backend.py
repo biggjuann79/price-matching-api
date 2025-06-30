@@ -94,7 +94,33 @@ async def get_listings(limit: int = 50):
         return {"success": True, "data": listings, "count": len(listings)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+@app.get("/deals")
+def get_deals(min_score: float = 70.0, limit: int = 20):
+    try:
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.execute("""
+                SELECT * FROM listings WHERE deal_score >= ? ORDER BY deal_score DESC LIMIT ?
+            """, (min_score, limit))
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "id": row[0],
+                    "title": row[1],
+                    "price": row[2],
+                    "category": row[3],
+                    "deal_score": row[4],
+                    # Optionally add mock fields below if needed by frontend
+                    "location": "Dallas, TX",
+                    "url": "https://example.com",
+                    "created_at": "2025-06-29T22:00:00Z",
+                    "ebay_average_price": 1200.0,
+                    "savings_amount": 401.0,
+                    "savings_percentage": 33.0,
+                    "image_urls": ["https://picsum.photos/300/200?random=6"]
+                })
+        return {"success": True, "data": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.post("/analyze")
 async def analyze():
     try:
