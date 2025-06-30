@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sqlite3
 import os
+from datetime import datetime
 
 # -----------------------------------
 # Initialize FastAPI
@@ -36,6 +37,11 @@ class CraigslistListing(BaseModel):
     url: str
     category: str
     deal_score: float = 0.0
+    ebay_average_price: float = 1200.0
+    savings_amount: float = 401.0
+    savings_percentage: float = 33.0
+    image_urls: list[str] = ["https://picsum.photos/300/200?random=5"]
+    created_at: str = datetime.utcnow().isoformat()
 
 # -----------------------------------
 # SQLite Database Handler
@@ -53,7 +59,10 @@ class DatabaseManager:
                     title TEXT,
                     price REAL,
                     category TEXT,
-                    deal_score REAL
+                    deal_score REAL,
+                    location TEXT,
+                    url TEXT,
+                    created_at TEXT
                 )
             """)
 
@@ -61,13 +70,21 @@ class DatabaseManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO listings 
-                (id, title, price, category, deal_score)
-                VALUES (?, ?, ?, ?, ?)
-            """, (listing.id, listing.title, listing.price, listing.category, listing.deal_score))
+                (id, title, price, category, deal_score, location, url, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                listing.id, listing.title, listing.price, listing.category,
+                listing.deal_score, listing.location, listing.url, listing.created_at
+            ))
 
     def get_listings(self, limit=50):
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("SELECT * FROM listings ORDER BY deal_score DESC LIMIT ?", (limit,))
+            cursor = conn.execute("""
+                SELECT id, title, price, category, deal_score, location, url, created_at 
+                FROM listings 
+                ORDER BY deal_score DESC 
+                LIMIT ?
+            """, (limit,))
             results = []
             for row in cursor.fetchall():
                 results.append({
@@ -75,7 +92,14 @@ class DatabaseManager:
                     "title": row[1],
                     "price": row[2],
                     "category": row[3],
-                    "deal_score": row[4]
+                    "deal_score": row[4],
+                    "location": row[5],
+                    "url": row[6],
+                    "created_at": row[7],
+                    "ebay_average_price": 1200.0,
+                    "savings_amount": 401.0,
+                    "savings_percentage": 33.0,
+                    "image_urls": ["https://picsum.photos/300/200?random=5"]
                 })
             return results
 
